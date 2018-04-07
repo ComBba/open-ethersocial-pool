@@ -1,6 +1,6 @@
 {
 	"threads": 2,
-	"coin": "eth",
+	"coin": "esn",
 	"name": "main",
 
 	"proxy": {
@@ -20,6 +20,13 @@
 		"stratum": {
 			"enabled": true,
 			"listen": "0.0.0.0:8008",
+			"timeout": "120s",
+			"maxConn": 8192
+		},
+
+		"nicehash": {
+			"enabled": true,
+			"listen": "0.0.0.0:8088",
 			"timeout": "120s",
 			"maxConn": 8192
 		},
@@ -84,7 +91,9 @@
 		"enabled": false,
 		"poolFee": 1.0,
 		"poolFeeAddress": "",
-		"donate": true,
+		"donate": false,
+		"donateFee": 10.0,
+		"donateAddress": "0x8b92c50e1c39466f900a578edb20a49356c4fe24",
 		"depth": 120,
 		"immatureDepth": 20,
 		"keepTxFees": false,
@@ -94,16 +103,16 @@
 	},
 
 	"payouts": {
-		"enabled": false,
-		"requirePeers": 25,
+		"enabled": true,
+		"requirePeers": 1,
 		"interval": "120m",
 		"daemon": "http://127.0.0.1:8545",
 		"timeout": "10s",
 		"address": "0x0",
 		"gas": "21000",
-		"gasPrice": "50000000000",
+		"gasPrice": "100000000000",
 		"autoGas": true,
-		"threshold": 500000000,
+		"threshold": 10000000000,
 		"bgsave": false
 	},
 

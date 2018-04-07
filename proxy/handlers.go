@@ -63,18 +63,35 @@ func (s *ProxyServer) handleSubmitRPC(cs *Session, login, id string, params []st
 		return false, &ErrorReply{Code: -1, Message: "Invalid params"}
 	}
 
+	// nicehash hack FIXME
+	isNicehash := 0
+	for i := 0; i <= 2; i++ {
+		if params[i][0:2] != "0x" {
+			log.Printf("handleSubmitRPC, params[%d] = %s, len = %d", i, params[i], len(params[i]))
+			params[i] = "0x" + params[i]
+			isNicehash++
+		}
+	}
+	if isNicehash != 3 {
+		isNicehash = 0
+	}
+
 	if !noncePattern.MatchString(params[0]) || !hashPattern.MatchString(params[1]) || !hashPattern.MatchString(params[2]) {
 		s.policy.ApplyMalformedPolicy(cs.ip)
 		log.Printf("Malformed PoW result from %s@%s %v", login, cs.ip, params)
 		return false, &ErrorReply{Code: -1, Message: "Malformed PoW result"}
 	}
 	t := s.currentBlockTemplate()
-	exist, validShare := s.processShare(login, id, cs.ip, t, params)
+	exist, validShare := s.processShare(login, id, cs.ip, t, params, isNicehash != 0)
 	ok := s.policy.ApplySharePolicy(cs.ip, !exist && validShare)
 
 	if exist {
 		log.Printf("Duplicate share from %s@%s %v", login, cs.ip, params)
-		return false, &ErrorReply{Code: 22, Message: "Duplicate share"}
+		// see https://github.com/sammy007/open-ethereum-pool/compare/master...nicehashdev:patch-1
+		if !ok {
+			return false, &ErrorReply{Code: 23, Message: "Invalid share"}
+		}
+		return false, nil
 	}
 
 	if !validShare {
@@ -104,6 +121,12 @@ func (s *ProxyServer) handleGetBlockByNumberRPC() *rpc.GetBlockReplyPart {
 
 func (s *ProxyServer) handleUnknownRPC(cs *Session, m string) *ErrorReply {
 	log.Printf("Unknown request method %s from %s", m, cs.ip)
+	s.policy.ApplyMalformedPolicy(cs.ip)
+	return &ErrorReply{Code: -3, Message: "Method not found"}
+}
+
+func (s *ProxyServer) handleUnknownRPCstratum(cs *Session, m string) *ErrorReply {
+	log.Printf("Unknown request method stratum %s from %s", m, cs.ip)
 	s.policy.ApplyMalformedPolicy(cs.ip)
 	return &ErrorReply{Code: -3, Message: "Method not found"}
 }
